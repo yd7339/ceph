@@ -3,7 +3,7 @@
 option(WITH_SYSTEM_ZSTD "use prebuilt libzstd in system" OFF)
 
 if(WITH_SYSTEM_ZSTD)
-  find_package(Zstd 1.4.4 REQUIRED)
+  find_package(Zstd 1.5.4 REQUIRED)
 else()
   include(BuildZstd)
   build_Zstd()

@@ -28,6 +28,11 @@ class ZstdCompressor : public Compressor {
 
   int compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message) override {
     ZSTD_CStream *s = ZSTD_createCStream();
+    #ifdef HAVE_QATZSTD
+        QZSTD_startQatDevice();
+        void *sequenceProducerState = QZSTD_createSeqProdState();
+    #endif
+
     ZSTD_initCStream_srcSize(s, cct->_conf->compressor_zstd_level, src.length());
     auto p = src.begin();
     size_t left = src.length();
@@ -38,6 +43,20 @@ class ZstdCompressor : public Compressor {
     outbuf.dst = outptr.c_str();
     outbuf.size = outptr.length();
     outbuf.pos = 0;
+
+    #ifdef HAVE_QATZSTD
+        ZSTD_registerSequenceProducer(
+        s,
+        sequenceProducerState,
+        qatSequenceProducer
+        );
+
+        res = ZSTD_CCtx_setParameter(s, ZSTD_c_enableSeqProducerFallback, 1);
+        if ((int)res <= 0) {
+        printf("Failed to set fallback\n");
+        goto exit;
+        }
+    #endif
 
     while (left) {
       ceph_assert(!p.end());
@@ -54,6 +73,11 @@ class ZstdCompressor : public Compressor {
     ceph_assert(p.end());
 
     ZSTD_freeCStream(s);
+
+    #ifdef HAVE_QATZSTD
+        QZSTD_freeSeqProdState(sequenceProducerState);
+        QZSTD_stopQatDevice();
+    #endif
 
     // prefix with decompressed length
     ceph::encode((uint32_t)src.length(), dst);

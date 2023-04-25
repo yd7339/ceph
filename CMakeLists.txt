@@ -307,6 +307,12 @@ if(WITH_QATZIP)
   set(HAVE_QATZIP ${qatzip_FOUND})
 endif(WITH_QATZIP)
 
+option(WITH_QATZSTD "Enable QATZSTD" OFF)
+if(WITH_QATZSTD)
+  find_package(QatZstd REQUIRED)
+  set(HAVE_QATZSTD ${QatZstd_FOUND})
+endif(WITH_QATZSTD)
+
 # needs mds and? XXX
 option(WITH_LIBCEPHFS "libcephfs client library" ON)
 
