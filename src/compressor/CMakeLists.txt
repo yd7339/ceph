@@ -4,6 +4,11 @@ set(compressor_srcs
 if (HAVE_QATZIP)
   list(APPEND compressor_srcs QatAccel.cc)
 endif()
+
+# if (HAVE_QATZSTD)
+#   list(APPEND compressor_srcs QatAccel.cc)
+# endif()
+
 add_library(compressor_objs OBJECT ${compressor_srcs})
 add_dependencies(compressor_objs common-objs)
 if(HAVE_QATZIP AND HAVE_QATDRV)

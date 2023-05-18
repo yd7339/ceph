@@ -28,7 +28,7 @@ class ZstdCompressor : public Compressor {
  public:
   ZstdCompressor(CephContext *cct) : Compressor(COMP_ALG_ZSTD, "zstd"), cct(cct) {
 #ifdef HAVE_QATZSTD
-      if (cct->_conf->qat_compressor_enabled && qat_accel.init("zstd"))
+      if (cct->_conf->qat_compressor_enabled)
         qatzstd_enabled = true;
       else
         qatzstd_enabled = false;
