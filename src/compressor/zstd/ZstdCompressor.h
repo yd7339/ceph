@@ -16,13 +16,32 @@
 #define CEPH_ZSTDCOMPRESSOR_H
 
 #define ZSTD_STATIC_LINKING_ONLY
-//#include "zstd/lib/zstd.h"
+#include "zstd/lib/zstd.h"
 #include "qatseqprod.h"
 
-#include "zstd.h"
+//#include "zstd.h"
 #include "include/buffer.h"
 #include "include/encoding.h"
 #include "compressor/Compressor.h"
+// #include "osd/osd_types.h"
+// #include "common/ceph_context.h"
+// #include "common/common_init.h"
+// #include "common/debug.h"
+// #include "common/dout.h"
+// #include "common/errno.h"
+
+//-----------------------------------------------------------------------------
+// #define dout_context g_ceph_context
+// #define dout_subsys ceph_subsys_compressor
+// #undef dout_prefix
+// #define dout_prefix _prefix(_dout)
+
+// using std::ostream;
+
+// static std::ostream& _prefix(std::ostream* _dout)
+// {
+//   return *_dout << "QZstdCompressor: ";
+// }
 
 class ZstdCompressor : public Compressor {
  public:
@@ -34,22 +53,26 @@ class ZstdCompressor : public Compressor {
         qatzstd_enabled = false;
 #endif
   }
-  
   int compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message) override {
     ZSTD_CStream *s = ZSTD_createCStream();
   #ifdef HAVE_QATZSTD
     void *sequenceProducerState = nullptr;
+//    dout(15) << "QAT intends to start" << dendl;
     if (qatzstd_enabled) {
-      QZSTD_startQatDevice();
+      int QATSTATUS = QZSTD_startQatDevice();
+//      dout(15) << "QZSTD status: " << QATSTATUS << dendl;
       sequenceProducerState = QZSTD_createSeqProdState();
     }
   #endif
-  
-    ZSTD_initCStream_srcSize(s, cct->_conf->compressor_zstd_level, src.length());
+//    dout(15) << "compressor zstd level: "<<cct->_conf->compressor_zstd_level  << dendl;
+//    dout(15) << "compression src length: "<<src.length()  << dendl;
+//    dout(15) << "stream:  "<< s << dendl;
+    ZSTD_initCStream_srcSize(s, cct->_conf->compressor_zstd_level, src.length()); //deprecated
     auto p = src.begin();
     size_t left = src.length();
-
-    size_t const out_max = ZSTD_compressBound(left);
+//    dout(15) << "left: "<< left  << dendl;
+    size_t const out_max = ZSTD_compressBound(left);  //max compressed output length in the worst occasion
+//    dout(15) << "out_max: "<< out_max  << dendl;
     ceph::buffer::ptr outptr = ceph::buffer::create_small_page_aligned(out_max);
     ZSTD_outBuffer_s outbuf;
     outbuf.dst = outptr.c_str();
@@ -59,6 +82,7 @@ class ZstdCompressor : public Compressor {
     //register qatSequenceProducer
   #ifdef HAVE_QATZSTD  
     if (qatzstd_enabled) {
+//      dout(15) << "begin to registerseqprod "<< dendl;
       ZSTD_registerSequenceProducer(
         s,
         sequenceProducerState,
@@ -66,6 +90,7 @@ class ZstdCompressor : public Compressor {
       );
 
       size_t res = ZSTD_CCtx_setParameter(s, ZSTD_c_enableSeqProducerFallback, 1);
+//      dout(15) << "res status: "<< res << dendl;
       if ((int)res <= 0) {
         printf("Failed to set fallback\n");
       return -1;
@@ -81,6 +106,8 @@ class ZstdCompressor : public Compressor {
       left -= inbuf.size;
       ZSTD_EndDirective const zed = (left==0) ? ZSTD_e_end : ZSTD_e_continue;
       size_t r = ZSTD_compressStream2(s, &outbuf, &inbuf, zed);
+//      dout(15) << "source size: "<< left << dendl;
+//      dout(15) << "compressed size: "<< r << dendl;
       if (ZSTD_isError(r)) {
 	return -EINVAL;
       }
