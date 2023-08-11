@@ -9,11 +9,17 @@ else()
   build_Zstd()
 endif()
 
+file(GLOB_RECURSE SRC_FILES *.cc)
+file(GLOB_RECURSE H_FILES *.h)
+
+#set(zstd_sources
+#  CompressionPluginZstd.cc)
+
 set(zstd_sources
-  CompressionPluginZstd.cc)
+  ${SRC_FILES} ${H_FILES})
 
 add_library(ceph_zstd SHARED ${zstd_sources})
-target_link_libraries(ceph_zstd PRIVATE Zstd::Zstd $<$<PLATFORM_ID:Windows>:ceph-common>)
+target_link_libraries(ceph_zstd PRIVATE Zstd::Zstd qatseqprod $<$<PLATFORM_ID:Windows>:ceph-common>)
 set_target_properties(ceph_zstd PROPERTIES
   VERSION 2.0.0
   SOVERSION 2
