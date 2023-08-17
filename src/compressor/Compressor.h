@@ -26,6 +26,9 @@
 #ifdef HAVE_QATZIP
   #include "QatAccel.h"
 #endif
+#ifdef HAVE_QATZSTD
+  #include "QatZstd.h"
+#endif
 
 namespace TOPNSPC {
 
@@ -77,6 +80,7 @@ public:
 
 #ifdef HAVE_QATZSTD
   bool qatzstd_enabled;
+  static QatZstd qatzstd_accel;
 #endif
 
   static const char* get_comp_alg_name(int a);

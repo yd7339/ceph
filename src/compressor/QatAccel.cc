@@ -126,6 +126,7 @@ QatAccel::session_ptr QatAccel::get_session() {
 QatAccel::QatAccel() {}
 
 QatAccel::~QatAccel() {
+//  dout(15) << "QatAccel qzClose" << dendl;
   // First, we should uninitialize all QATzip session that disconnects all session
   // from a hardware instance and deallocates buffers.
   sessions.clear();

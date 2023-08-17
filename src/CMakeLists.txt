@@ -503,7 +503,10 @@ if(HAVE_QATZIP)
 endif()
 
 if(HAVE_QATZSTD)
-  list(APPEND ceph_common_deps ${QatZstd_LIBRARIES})
+  find_library(Zstd_LIBRARY
+  NAMES "libzstd.so"
+  HINTS /usr/local/lib)
+  list(APPEND ceph_common_deps ${QatZstd_LIBRARIES} ${Zstd_LIBRARY})
 endif()
 
 if(WITH_DPDK)
@@ -541,6 +544,11 @@ if(WITH_BLUESTORE_PMEM OR WITH_RBD_RWL)
     build_pmdk(${enable_ndctl})
   endif()
 endif()
+
+message(STATUS "ceph_common_objs=${ceph_common_objs}")
+message(STATUS "ceph_common_deps=${ceph_common_deps}")
+message(STATUS "ZLIB_LIBRARIES=${ZLIB_LIBRARIES}")
+message(STATUS "zstd_library=${Zstd_LIBRARY}")
 
 add_library(common STATIC ${ceph_common_objs})
 target_link_libraries(common ${ceph_common_deps})

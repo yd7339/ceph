@@ -30,6 +30,10 @@ namespace TOPNSPC {
   QatAccel Compressor::qat_accel;
 #endif
 
+#ifdef HAVE_QATZSTD
+  QatZstd Compressor::qatzstd_accel;
+#endif
+
 const char* Compressor::get_comp_alg_name(int a) {
 
   auto p = std::find_if(std::cbegin(compression_algorithms), std::cend(compression_algorithms),

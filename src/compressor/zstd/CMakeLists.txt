@@ -19,7 +19,7 @@ set(zstd_sources
   ${SRC_FILES} ${H_FILES})
 
 add_library(ceph_zstd SHARED ${zstd_sources})
-target_link_libraries(ceph_zstd PRIVATE Zstd::Zstd qatseqprod $<$<PLATFORM_ID:Windows>:ceph-common>)
+target_link_libraries(ceph_zstd PRIVATE Zstd::Zstd compressor $<$<PLATFORM_ID:Windows>:ceph-common>)
 set_target_properties(ceph_zstd PROPERTIES
   VERSION 2.0.0
   SOVERSION 2

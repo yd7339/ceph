@@ -5,9 +5,9 @@ if (HAVE_QATZIP)
   list(APPEND compressor_srcs QatAccel.cc)
 endif()
 
-# if (HAVE_QATZSTD)
-#   list(APPEND compressor_srcs QatAccel.cc)
-# endif()
+if (HAVE_QATZSTD)
+  list(APPEND compressor_srcs QatZstd.cc)
+endif()
 
 add_library(compressor_objs OBJECT ${compressor_srcs})
 add_dependencies(compressor_objs common-objs)
