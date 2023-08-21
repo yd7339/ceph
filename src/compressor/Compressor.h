@@ -27,6 +27,10 @@
   #include "QatAccel.h"
 #endif
 
+#ifdef HAVE_QATZSTD
+  #include "QatZstd.h"
+#endif
+
 namespace TOPNSPC {
 
 class Compressor;
@@ -73,6 +77,11 @@ public:
 #ifdef HAVE_QATZIP
   bool qat_enabled;
   static QatAccel qat_accel;
+#endif
+
+#ifdef HAVE_QATZSTD
+  bool qatzstd_enabled;
+  static QatZstd qatzstd_accel;
 #endif
 
   static const char* get_comp_alg_name(int a);
