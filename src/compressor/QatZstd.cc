@@ -19,8 +19,6 @@
 
 #include <zstd.h>
 #include <zstd_errors.h>
-
-//#include "common/ceph_context.h"
 #include "common/common_init.h"
 #include "common/debug.h"
 #include "common/dout.h"
@@ -63,19 +61,14 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
     ZSTD_CStream *s = ZSTD_createCStream();
     void *sequenceProducerState = nullptr;
     int QATSTATUS=QZSTD_startQatDevice();
-    dout(15) << "QZSTD status: " << QATSTATUS << dendl;
     sequenceProducerState = QZSTD_createSeqProdState();
   
 //    ZSTD_initCStream_srcSize(s, cct->_conf->compressor_zstd_level, src.length());
 
     size_t status = ZSTD_CCtx_reset(s, ZSTD_reset_session_only);
-//    dout(15) << "zstd reset status: "<< status << dendl;
     status = ZSTD_CCtx_refCDict(s, NULL); // clear the dictionary (if any)
-//    dout(15) << "zstd refCDict status: "<< status << dendl;
     status = ZSTD_CCtx_setParameter(s, ZSTD_c_compressionLevel, cct->_conf->compressor_zstd_level);
-//    dout(15) << "zstd set compression level status: "<< status << dendl;
     status = ZSTD_CCtx_setPledgedSrcSize(s, src.length());
-//    dout(15) << "zstd set PledgedSrcSize status: "<< status << dendl;
 
     auto p = src.begin();
     size_t left = src.length();
@@ -88,19 +81,14 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
     outbuf.pos = 0;
     
     //register qatSequenceProducer
-    dout(15) << "begin to registerseqprod "<< dendl;
     ZSTD_registerSequenceProducer(
       s,
       sequenceProducerState,
       qatSequenceProducer
     );
-    dout(15) << "s= "<< s << dendl;
 
-//      dout(15) << "CCtx ZSTD_c_enableSeqProducerFallback: "<< s->appliedParams->ZSTD_c_enableSeqProducerFallback << dendl;
     size_t res = ZSTD_CCtx_setParameter(s, ZSTD_c_enableSeqProducerFallback, 1);
-    dout(15) << "res status: "<< res << dendl;
     if ((int)res <= 0) {
-      dout(15) << "Failed to set fallback" << dendl;
       printf("Failed to set fallback\n");
       return -1;
     }
@@ -121,7 +109,6 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
     
     ZSTD_freeCStream(s);
     QZSTD_freeSeqProdState(sequenceProducerState);
-    dout(15) << "freeseq" <<dendl;
     // prefix with decompressed length
     ceph::encode((uint32_t)src.length(), dst);
     dst.append(outptr, 0, outbuf.pos);

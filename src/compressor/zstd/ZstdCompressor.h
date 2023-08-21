@@ -15,14 +15,6 @@
 #ifndef CEPH_ZSTDCOMPRESSOR_H
 #define CEPH_ZSTDCOMPRESSOR_H
 
-//#include "qatseqprod.h"
-
-//#define ZSTD_STATIC_LINKING_ONLY
-// #include "zstd/lib/zstd.h"
-// #include "zstd/lib/zstd_errors.h"
-
-// #include "include/buffer.h"
-// #include "include/encoding.h"
 #include "common/config.h"
 #include "compressor/Compressor.h"
 
