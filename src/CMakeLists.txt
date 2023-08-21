@@ -38,7 +38,8 @@ if(ENABLE_GIT_VERSION)
   get_git_head_revision(GIT_REFSPEC CEPH_GIT_VER)
   git_describe(CEPH_GIT_NICE_VER_WITH_V --always)
   # remove leading 'v'
-  string(SUBSTRING ${CEPH_GIT_NICE_VER_WITH_V} 1 -1 CEPH_GIT_NICE_VER)
+  #string(SUBSTRING ${CEPH_GIT_NICE_VER_WITH_V} 1 -1 CEPH_GIT_NICE_VER)
+  set(CEPH_GIT_NICE_VER "18.2.0")
   #if building from a source tarball via make-dist
   if(${CEPH_GIT_VER} STREQUAL "GITDIR-NOTFOUND")
     message(STATUS "Ceph/.git directory not found, parsing ${CMAKE_CURRENT_SOURCE_DIR}/.git_version for CEPH_GIT_VER and CEPH_GIT_NICE_VER")
@@ -497,6 +498,13 @@ endif()
 
 if(HAVE_QATZIP)
   list(APPEND ceph_common_deps ${qatzip_LIBRARIES})
+endif()
+
+if(HAVE_QATZSTD)
+  find_library(Zstd_LIBRARY
+  NAMES "libzstd.so"
+  HINTS /usr/local/lib)
+  list(APPEND ceph_common_deps ${QatZstd_LIBRARIES} ${Zstd_LIBRARY})
 endif()
 
 if(WITH_DPDK)

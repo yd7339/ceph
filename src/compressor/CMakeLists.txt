@@ -4,6 +4,11 @@ set(compressor_srcs
 if (HAVE_QATZIP)
   list(APPEND compressor_srcs QatAccel.cc)
 endif()
+
+if (HAVE_QATZSTD)
+  list(APPEND compressor_srcs QatZstd.cc)
+endif()
+
 add_library(compressor_objs OBJECT ${compressor_srcs})
 add_dependencies(compressor_objs common-objs)
 if(HAVE_QATZIP AND HAVE_QATDRV)
@@ -13,6 +18,15 @@ if(HAVE_QATZIP AND HAVE_QATDRV)
                         qatzip::qatzip
                        )
 endif()
+
+if(HAVE_QATZSTD AND HAVE_QATDRV)
+  target_link_libraries(compressor_objs PRIVATE
+                        QatDrv::qat_s
+                        QatDrv::usdm_drv_s
+                        QatZstd::QatZstd
+                       )
+endif()
+
 add_dependencies(compressor_objs legacy-option-headers)
 
 ## compressor plugins

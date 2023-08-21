@@ -12,7 +12,8 @@
 
 find_path(Zstd_INCLUDE_DIR
   NAMES zstd.h
-  HINTS ${Zstd_ROOT_DIR}/include)
+  HINTS /usr/local/include)
+#  HINTS ${Zstd_ROOT_DIR}/include)
 
 if(Zstd_INCLUDE_DIR AND EXISTS "${Zstd_INCLUDE_DIR}/zstd.h")
   foreach(ver "MAJOR" "MINOR" "RELEASE")
@@ -27,8 +28,10 @@ if(Zstd_INCLUDE_DIR AND EXISTS "${Zstd_INCLUDE_DIR}/zstd.h")
 endif()
 
 find_library(Zstd_LIBRARY
-  NAMES "${CMAKE_STATIC_LIBRARY_PREFIX}zstd.${CMAKE_STATIC_LIBRARY_SUFFIX}" zstd
-  HINTS ${Zstd_ROOT_DIR}/lib)
+  NAMES "libzstd.so"
+  HINTS /usr/local/lib)
+#  NAMES "${CMAKE_STATIC_LIBRARY_PREFIX}zstd.${CMAKE_STATIC_LIBRARY_SUFFIX}" zstd
+#  HINTS ${Zstd_ROOT_DIR}/lib)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Zstd
