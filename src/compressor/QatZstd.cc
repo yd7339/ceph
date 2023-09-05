@@ -44,6 +44,11 @@ QatZstd::~QatZstd() {
 
 bool QatZstd::init(const std::string &alg) {
   std::scoped_lock lock(mutex);
+  int status = QZSTD_startQatDevice();
+  if (status) {
+    dout(15) << "QZSTD start failed" << dendl;
+    return false;
+  }
   if (!alg_name.empty()) {
     return true;
   }
@@ -60,7 +65,7 @@ bool QatZstd::init(const std::string &alg) {
 int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message, CephContext *cct){
     ZSTD_CStream *s = ZSTD_createCStream();
     void *sequenceProducerState = nullptr;
-    int QATSTATUS=QZSTD_startQatDevice();
+    //int QATSTATUS=QZSTD_startQatDevice();
     sequenceProducerState = QZSTD_createSeqProdState();
   
 //    ZSTD_initCStream_srcSize(s, cct->_conf->compressor_zstd_level, src.length());
