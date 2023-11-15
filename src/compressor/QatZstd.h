@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "include/buffer.h"
-#include "common/ceph_context.h"
+//#include "common/ceph_context.h"
 
 class QatZstd {
 
@@ -31,12 +31,13 @@ class QatZstd {
   ~QatZstd();
 
   bool init(const std::string &alg);
-  int compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message, CephContext *cct);
+  int compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message);
   //int compress(const bufferlist &in, bufferlist &out, std::optional<int32_t> &compressor_message);
 
  private:
   std::mutex mutex;
   std::string alg_name;
+  void *sequenceProducerState;
 };
 
 #endif

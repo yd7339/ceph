@@ -79,7 +79,7 @@ int ZstdCompressor::zstd_compress(const ceph::buffer::list &src, ceph::buffer::l
 int ZstdCompressor::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message) {
 #ifdef HAVE_QATZSTD
     if (qatzstd_enabled)
-        return qatzstd_accel.compress(src, dst, compressor_message, cct);
+        return qatzstd_accel.compress(src, dst, compressor_message);
     else
         return zstd_compress(src, dst, compressor_message);
 #endif

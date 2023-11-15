@@ -58,7 +58,7 @@ bool QatZstd::init(const std::string &alg) {
   return true;
 }
 
-int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message, CephContext *cct){
+int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message){
     ZSTD_CStream *s = ZSTD_createCStream();
     void *sequenceProducerState = nullptr;
     int QATSTATUS=QZSTD_startQatDevice();
@@ -68,7 +68,8 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
 
     size_t status = ZSTD_CCtx_reset(s, ZSTD_reset_session_only);
     status = ZSTD_CCtx_refCDict(s, NULL); // clear the dictionary (if any)
-    status = ZSTD_CCtx_setParameter(s, ZSTD_c_compressionLevel, cct->_conf->compressor_zstd_level);
+    status = ZSTD_CCtx_setParameter(s, ZSTD_c_compressionLevel, g_ceph_context->_conf->compressor_zstd_level);
+    dout(15) << "zstd compression level" << g_ceph_context->_conf->compressor_zstd_level << dendl;
     status = ZSTD_CCtx_setPledgedSrcSize(s, src.length());
 
     auto p = src.begin();
@@ -90,8 +91,8 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
 
     size_t res = ZSTD_CCtx_setParameter(s, ZSTD_c_enableSeqProducerFallback, 1);
     if ((int)res <= 0) {
-      printf("Failed to set fallback\n");
-      return -1;
+      dout(15) << "Failed to set fallback" << dendl;
+      return -EINVAL;
     }
 
     while (left) {
@@ -103,6 +104,7 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
       ZSTD_EndDirective const zed = (left==0) ? ZSTD_e_end : ZSTD_e_continue;
       size_t r = ZSTD_compressStream2(s, &outbuf, &inbuf, zed);
       if (ZSTD_isError(r)) {
+        dout(15) << "zstd compress error" << dendl;
 	      return -EINVAL;
       }
     }
