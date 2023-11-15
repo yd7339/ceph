@@ -39,6 +39,7 @@ static std::ostream& _prefix(std::ostream* _dout)
 QatZstd::QatZstd() {}
 
 QatZstd::~QatZstd() {
+    QZSTD_freeSeqProdState(sequenceProducerState);
     QZSTD_stopQatDevice();
 }
 
@@ -108,7 +109,7 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
     ceph_assert(p.end());
     
     ZSTD_freeCStream(s);
-    QZSTD_freeSeqProdState(sequenceProducerState);
+//    QZSTD_freeSeqProdState(sequenceProducerState);
     // prefix with decompressed length
     ceph::encode((uint32_t)src.length(), dst);
     dst.append(outptr, 0, outbuf.pos);
