@@ -36,7 +36,10 @@ static std::ostream& _prefix(std::ostream* _dout)
   return *_dout << "QatZstdCompressor: ";
 }
 
-QatZstd::QatZstd() {}
+QatZstd::QatZstd() {
+    int QATSTATUS = QZSTD_startQatDevice();
+    void *sequenceProducerState = QZSTD_createSeqProdState();
+}
 
 QatZstd::~QatZstd() {
     QZSTD_freeSeqProdState(sequenceProducerState);
@@ -60,9 +63,9 @@ bool QatZstd::init(const std::string &alg) {
 
 int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message){
     ZSTD_CStream *s = ZSTD_createCStream();
-    void *sequenceProducerState = nullptr;
-    int QATSTATUS=QZSTD_startQatDevice();
-    sequenceProducerState = QZSTD_createSeqProdState();
+//    void *sequenceProducerState = nullptr;
+//    int QATSTATUS=QZSTD_startQatDevice();
+//    sequenceProducerState = QZSTD_createSeqProdState();
   
 //    ZSTD_initCStream_srcSize(s, cct->_conf->compressor_zstd_level, src.length());
 
