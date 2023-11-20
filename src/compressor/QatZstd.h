@@ -24,9 +24,15 @@
 #include "include/buffer.h"
 //#include "common/ceph_context.h"
 
+extern "C" struct QZSTD_Session_T;
+struct QZSTDSessionDeleter {
+  void operator() (struct QZSTD_Session_T *session);
+};
+
 class QatZstd {
 
  public:
+  using session_ptr = std::unique_ptr<struct QZSTD_Session_T, QZSTDSessionDeleter>;
   QatZstd();
   ~QatZstd();
 
@@ -35,9 +41,12 @@ class QatZstd {
   //int compress(const bufferlist &in, bufferlist &out, std::optional<int32_t> &compressor_message);
 
  private:
+  session_ptr get_session();
+  friend struct cached_session_t;
+  std::vector<session_ptr> sessions;
   std::mutex mutex;
   std::string alg_name;
-  void *sequenceProducerState;
+  //void *sequenceProducerState;
 };
 
 #endif
