@@ -36,6 +36,67 @@ static std::ostream& _prefix(std::ostream* _dout)
   return *_dout << "QatZstdCompressor: ";
 }
 
+void QZSTDSessionDeleter::operator() (struct QZSTD_Session_S *session) {
+  QZSTD_freeSeqProdState(session);
+  delete session;
+}
+
+static bool setup_session(QatZstd::session_ptr &session) {
+  struct QZSTD_Session_S *zstdSess = session.get();
+  // need dependency for QAT driver
+  QZSTD_setupSess(zstdSess);
+  return true;
+}
+
+// put the session back to the session pool in a RAII manner
+struct cached_session_t {
+  cached_session_t(QatZstd* accel, QatZstd::session_ptr&& sess)
+    : accel{accel}, session{std::move(sess)} {}
+
+  ~cached_session_t() {
+    std::scoped_lock lock{accel->mutex};
+    // if the cache size is still under its upper bound, the current session is put into
+    // accel->sessions. otherwise it's released right
+    uint64_t sessions_num = g_ceph_context->_conf.get_val<uint64_t>("qat_compressor_session_max_number");
+    if (accel->sessions.size() < sessions_num) {
+      accel->sessions.push_back(std::move(session));
+    }
+  }
+
+  struct QZSTD_Session_S* get() {
+    assert(static_cast<bool>(session));
+    return session.get();
+  }
+
+  QatZstd* accel;
+  QatZstd::session_ptr session;
+};
+
+QatZstd::session_ptr QatZstd::get_session() {
+  {
+    std::scoped_lock lock{mutex};
+    if (!sessions.empty()) {
+      auto session = std::move(sessions.back());
+      sessions.pop_back();
+      return session;
+    }
+  }
+
+  // If there are no available session to use, we try allocate a new
+  // session.
+  // QzSessionParams_T params = {(QzHuffmanHdr_T)0,};
+  // session_ptr session(new struct QzSession_S());
+  // memset(session.get(), 0, sizeof(struct QzSession_S));
+  session_ptr session(new struct QZSTD_Session_S());
+  memset(session.get(), 0, sizeof(struct QZSTD_Session_S));
+  if (setup_session(session)) {
+    return session;
+  } else {
+    return nullptr;
+  }
+//  session = (struct QZSTD_Session_S *)QZSTD_createSeqProdState();
+}
+
 QatZstd::QatZstd() {
   QZSTD_startQatDevice();    
 }
@@ -61,7 +122,12 @@ bool QatZstd::init(const std::string &alg) {
 
 int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, std::optional<int32_t> &compressor_message){
     ZSTD_CStream *s = ZSTD_createCStream();
-    void *sequenceProducerState = QZSTD_createSeqProdState();  
+    auto sequenceProducerState = get_session();
+    if (!sequenceProducerState) {
+      return -1; // session initialization failed
+    }
+    auto session = cached_session_t{this, std::move(sequenceProducerState)}; // returns to the session pool on destruction
+//    QZSTD_Session_T *sequenceProducerState = QZSTD_createSeqProdState();  
     ZSTD_CCtx_reset(s, ZSTD_reset_session_only);
     ZSTD_CCtx_refCDict(s, NULL); // clear the dictionary (if any)
     ZSTD_CCtx_setParameter(s, ZSTD_c_compressionLevel, g_ceph_context->_conf->compressor_zstd_level);
@@ -80,7 +146,7 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
     //register qatSequenceProducer
     ZSTD_registerSequenceProducer(
       s,
-      sequenceProducerState,
+      session.get(),
       qatSequenceProducer
     );
 
@@ -106,7 +172,7 @@ int QatZstd::compress(const ceph::buffer::list &src, ceph::buffer::list &dst, st
     ceph_assert(p.end());
     
     ZSTD_freeCStream(s);
-    QZSTD_freeSeqProdState(sequenceProducerState);
+//    QZSTD_freeSeqProdState(sequenceProducerState);
     // prefix with decompressed length
     ceph::encode((uint32_t)src.length(), dst);
     dst.append(outptr, 0, outbuf.pos);
